@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import session from "express-session";
 dotenv.config();
 
 const app = express();
@@ -16,9 +17,27 @@ app.use(
     credentials: true,
   })
 );
+app.set("trust proxy", 1);
+app.use(
+  session({
+    secret: "keyboard cat",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-app.get("/", (req, res) => {
-  res.send("caita!");
+app.get("/", function (req, res, next) {
+  if (req.session.views) {
+    req.session.views++;
+    res.setHeader("Content-Type", "text/html");
+    res.write("<p>views: " + req.session.views + "</p>");
+    res.write("<p>expires in: " + req.session.cookie.maxAge / 1000 + "s</p>");
+    res.end();
+  } else {
+    req.session.views = 1;
+    res.end("welcome to the session demo. refresh!");
+  }
+});
 });
 
 app.get("/creators/current_creator_profile", async (req, res) => {
