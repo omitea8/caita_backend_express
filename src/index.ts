@@ -39,6 +39,7 @@ app.get("/", function (req, res, next) {
   }
 });
 });
+});
 
 app.get("/creators/current_creator_profile", async (req, res) => {
   const creator = await prisma.creators.findFirst();
