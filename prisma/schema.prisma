@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model creators {
+  id                    Int                        @id @default(autoincrement())
+  twitter_system_id     String?                    @unique(map: "index_creators_on_twitter_system_id")
+  twitter_id            String?
+  twitter_name          String?
+  twitter_profile_image String?
+  twitter_description   String?
+  created_at            Unsupported("datetime(6)")
+  updated_at            Unsupported("datetime(6)")
+  images                images[]
+}
+
+model images {
+  id           Int                        @id @default(autoincrement())
+  caption      String?
+  image_url    String?
+  creator_id   Int
+  created_at   Unsupported("datetime(6)")
+  updated_at   Unsupported("datetime(6)")
+  storage_name String?                    @unique(map: "index_images_on_storage_name")
+  image_name   String?                    @unique(map: "index_images_on_image_name")
+  creators     creators                   @relation(fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([creator_id, created_at], map: "index_images_on_creator_id_and_created_at")
+  @@index([creator_id], map: "index_images_on_creator_id")
+}
