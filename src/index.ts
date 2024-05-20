@@ -31,6 +31,9 @@ app.get("/creators/current_creator_profile", async (req, res) => {
     username: creator?.twitter_id,
   });
 });
+
+// 接続を開始
+// https://expressjs.com/ja/4x/api.html#app.listen
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
