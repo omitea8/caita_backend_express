@@ -63,6 +63,7 @@ app.post("/creators/handle_token_callback", async (req, res) => {
     process.env.TWITTER_CALLBACK_URL || ""
   );
   const body = await fetchMeFromTwitter(accessToken);
+  req.session.userId = body.data.username;
   // TODO: DBのサポートされていないカラム(型)について後で考える
   // TODO: サポートされている型を使えばupsertが使えるようになる
   await prisma.creators.updateMany({
@@ -78,8 +79,14 @@ app.post("/creators/handle_token_callback", async (req, res) => {
   return res.json({ message: "ok" });
 });
 
+// プロフィールの取得
 app.get("/creators/current_creator_profile", async (req, res) => {
-  const creator = await prisma.creators.findFirst();
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not Login" });
+  }
+  const creator = await prisma.creators.findFirst({
+    where: { twitter_id: req.session.userId },
+  });
   return res.json({
     profile_image_url: creator?.twitter_profile_image,
     name: creator?.twitter_name,

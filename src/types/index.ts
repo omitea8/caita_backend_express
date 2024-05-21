@@ -4,5 +4,6 @@ declare module "express-session" {
   interface Session {
     state: string;
     challengeVerifier: string;
+    userId: string;
   }
 }
