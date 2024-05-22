@@ -95,6 +95,49 @@ app.get("/creators/current_creator_profile", async (req, res) => {
   });
 });
 
+// 画像一覧を取得
+app.get("/images/creator/:creatorId", async (req, res) => {
+  const creator = await prisma.creators.findFirst({
+    where: { twitter_id: req.params.creatorId },
+  });
+  const images = await prisma.images.findMany({
+    where: { creator_id: creator?.id },
+    select: {
+      caption: true,
+      image_url: true,
+      image_name: true,
+      storage_name: true,
+    },
+    // orderBy: { created_at: "desc" },
+  });
+  const data = images.map((image) => {
+    const resizedImageUrl = `${awsBucketUrl}${image.storage_name}.webp`;
+    return {
+      caption: image.caption,
+      image_name: image.image_name,
+      resized_image_url: resizedImageUrl,
+    };
+  });
+  return res.json(data);
+});
+
+// 画像Dataを作成
+app.get("/images/imagedata", async (req, res) => {
+  const image = await prisma.images.findFirst({
+    where: { image_name: req.body.image_name },
+  });
+  const resizedImageUrl = `${awsBucketUrl}${image?.storage_name}.webp`;
+  const data = {
+    caption: image?.caption,
+    image_url: image?.image_url,
+    resized_image_url: resizedImageUrl,
+  };
+  return res.json(data);
+});
+
+// AWS S3へリクエストを送る時のURLを作成
+const awsBucketUrl = `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+
 // 接続を開始
 // https://expressjs.com/ja/4x/api.html#app.listen
 app.listen(port, () => {
