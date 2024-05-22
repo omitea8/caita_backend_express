@@ -35,10 +35,7 @@ export const fetchMeFromTwitter = async (access_token: string) => {
   };
   const res = await fetch(url.toString(), { headers });
   // デバッグ用
-  const debagRequestLimit = res.headers.get("x-rate-limit-remaining");
-  const debagLimit = res.headers.get("x-rate-limit-limit");
-  const debagReset = res.headers.get("x-rate-limit-reset");
-  console.log(debagRequestLimit, debagLimit, debagReset);
+  console.log(res.headers);
   return (await res.json()) as {
     data: {
       name: string;
