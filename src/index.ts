@@ -79,7 +79,7 @@ app.post("/creators/handle_token_callback", async (req, res) => {
   return res.json({ message: "ok" });
 });
 
-// プロフィールの取得
+// 現在ログイン中のクリエイターのプロフィールの取得
 app.get("/creators/current_creator_profile", async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Not Login" });
@@ -92,6 +92,17 @@ app.get("/creators/current_creator_profile", async (req, res) => {
     name: creator?.twitter_name,
     description: creator?.twitter_description,
     username: creator?.twitter_id,
+  });
+});
+// TwitterIDを使ってクリエイターのプロフィールを取得
+app.get("/creators/:creatorId", async (req, res) => {
+  const creator = await prisma.creators.findFirst({
+    where: { twitter_id: req.params.creatorId },
+  });
+  return res.json({
+    twitter_name: creator?.twitter_id,
+    twitter_profile_image: creator?.twitter_profile_image,
+    twitter_description: creator?.twitter_description,
   });
 });
 
