@@ -6,13 +6,25 @@ import { createHash } from "crypto";
 import session from "express-session";
 import bodyParser from "body-parser";
 import { getTokenFromTwitter, fetchMeFromTwitter } from "./modules/auth";
+import { isValidImage, isValidCaption } from "./modules/image";
+import multer from "multer";
+import sharp from "sharp";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 dotenv.config();
+const upload = multer({ dest: "uploads/" });
 
 const app = express();
 const port = 3001;
 
 const prisma = new PrismaClient();
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY || "",
+    secretAccessKey: process.env.AWS_SECRET_KEY || "",
+  },
+});
 
 app.use(
   cors({
@@ -144,6 +156,41 @@ app.get("/images/imagedata", async (req, res) => {
     resized_image_url: resizedImageUrl,
   };
   return res.json(data);
+});
+
+// 画像をアップロード
+app.post("/images/post", upload.single("image"), async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  if (
+    !(req.file && isValidImage(req.file) && isValidCaption(req.body.caption))
+  ) {
+    return res.status(422).json({ message: "Unprocessable Entity" });
+  }
+  // ランダムな画像の名前を作成
+  const imageName = crypto.randomUUID();
+  //　拡張子を取り出す
+  const extension = req.file.mimetype.replace("image/", "");
+  // 画像を縮小
+  const resizedImage = sharp(req.file.path)
+    .resize(1200, 1200, { fit: "inside" })
+    .webp({ quality: 100 });
+  // S3に複数の画像をアップロード
+  //  AWS S3に画像をアップロード
+  // webp
+  const params = {
+    Bucket: process.env.AWS_BUCKET,
+    Key: `${imageName}.webp`,
+    Body: await resizedImage.toBuffer(),
+    ContentType: "image/webp",
+    CacheControl: "no-cache, no-store, must-revalidate",
+  };
+  const s3ImageSend = await s3Client.send(new PutObjectCommand(params));
+  console.log(s3ImageSend);
+
+  // image_urlを作成
+  // DBに保存
 });
 
 // AWS S3へリクエストを送る時のURLを作成
