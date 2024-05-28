@@ -179,14 +179,15 @@ app.post("/images/post", upload.single("image"), async (req, res) => {
   // S3に複数の画像をアップロード
   //  AWS S3に画像をアップロード
   // webp
-  const params = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: `${imageName}.webp`,
-    Body: await resizedImage.toBuffer(),
-    ContentType: "image/webp",
-    CacheControl: "no-cache, no-store, must-revalidate",
-  };
-  const s3ImageSend = await s3Client.send(new PutObjectCommand(params));
+  const s3ImageSend = await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: `${imageName}.webp`,
+      Body: await resizedImage.toBuffer(),
+      ContentType: "image/webp",
+      CacheControl: "no-cache, no-store, must-revalidate",
+    })
+  );
   console.log(s3ImageSend);
 
   // image_urlを作成
