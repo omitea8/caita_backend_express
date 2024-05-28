@@ -172,8 +172,10 @@ app.post("/images/post", upload.single("image"), async (req, res) => {
   const imageName = crypto.randomUUID();
   //　拡張子を取り出す
   const extension = req.file.mimetype.replace("image/", "");
-  // S3に複数の画像をアップロード
-  //  AWS S3に画像をアップロード
+  // AWS S3に画像をアップロード
+  // TODO: 原寸画像と縮小画像のリクエストをまとめたい
+  // TODO: メモリが足りなくなるようだったら、サーバーを分ける
+  // TODO: クライアントから画像送れるようにしたい
   const image = sharp(req.file.path);
   await s3Client.send(
     new PutObjectCommand({
@@ -188,6 +190,7 @@ app.post("/images/post", upload.single("image"), async (req, res) => {
   await s3Client.send(
     new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET,
+      // TODO: keyの名前を変えたので、クライアント側も変更する
       Key: `${imageName}_resized.webp`,
       Body: await image
         .resize(1200, 1200, { fit: "inside" })
@@ -197,7 +200,7 @@ app.post("/images/post", upload.single("image"), async (req, res) => {
       CacheControl: "no-cache, no-store, must-revalidate",
     })
   );
-  // 原寸画像
+  // TODO: 一次保存された画像の削除
   // image_urlを作成
   // DBに保存
 });
