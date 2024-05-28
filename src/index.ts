@@ -172,24 +172,32 @@ app.post("/images/post", upload.single("image"), async (req, res) => {
   const imageName = crypto.randomUUID();
   //　拡張子を取り出す
   const extension = req.file.mimetype.replace("image/", "");
-  // 画像を縮小
-  const resizedImage = sharp(req.file.path)
-    .resize(1200, 1200, { fit: "inside" })
-    .webp({ quality: 100 });
   // S3に複数の画像をアップロード
   //  AWS S3に画像をアップロード
-  // webp
-  const s3ImageSend = await s3Client.send(
+  const image = sharp(req.file.path);
+  await s3Client.send(
     new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET,
-      Key: `${imageName}.webp`,
-      Body: await resizedImage.toBuffer(),
+      Key: `${imageName}.${extension}`,
+      Body: await image.toBuffer(),
+      ContentType: req.file.mimetype,
+      CacheControl: "no-cache, no-store, must-revalidate",
+    })
+  );
+  // webp
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: `${imageName}_resized.webp`,
+      Body: await image
+        .resize(1200, 1200, { fit: "inside" })
+        .webp({ quality: 100 })
+        .toBuffer(),
       ContentType: "image/webp",
       CacheControl: "no-cache, no-store, must-revalidate",
     })
   );
-  console.log(s3ImageSend);
-
+  // 原寸画像
   // image_urlを作成
   // DBに保存
 });
